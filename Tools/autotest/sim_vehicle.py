@@ -1120,6 +1120,10 @@ group_sim.add_option("", "--slave",
                      type='int',
                      default=0,
                      help="Set the number of JSON slave")
+group_sim.add_option("--enable-xrce-dds", action='store_true',
+                     default=True,
+                     help="Enable the xrce client to connect with ROS2/DDS")
+                     
 parser.add_option_group(group_sim)
 
 
