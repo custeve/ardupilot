@@ -65,7 +65,7 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
 };
 
 // reference to the vehicle. using AP::vehicle() here does not work on clang
-#if APM_BUILD_TYPE(APM_BUILD_UNKNOWN) || APM_BUILD_TYPE(APM_BUILD_AP_Periph)
+#if APM_BUILD_TYPE(APM_BUILD_UNKNOWN)
 AP_Vehicle& vehicle = *AP_Vehicle::get_singleton();
 #else
 extern AP_Vehicle& vehicle;
@@ -175,6 +175,10 @@ void AP_Vehicle::setup()
     generator.init();
 #endif
     gcs().send_text(MAV_SEVERITY_INFO, "ArduPilot Ready");
+
+#if AP_XRCE_ENABLED
+    init_xrce_client();
+#endif
 }
 
 void AP_Vehicle::loop()
@@ -235,6 +239,9 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #endif
 #if OSD_ENABLED
     SCHED_TASK(publish_osd_info, 1, 10),
+#endif
+#if AP_XRCE_ENABLED
+    SCHED_TASK(update_topics,1,75),
 #endif
 };
 
@@ -415,6 +422,27 @@ void AP_Vehicle::get_osd_roll_pitch_rad(float &roll, float &pitch) const
     pitch = ahrs.pitch;
 }
 
+#endif
+
+#if AP_XRCE_ENABLED
+void AP_Vehicle::init_xrce_client()
+{
+    if(xrce_client.init()){
+        if(xrce_client.create()){
+            hal.scheduler->register_io_process(FUNCTOR_BIND(&xrce_client,&AP_XRCE_Client::write,void));
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO,"Client: Initialization passed");
+        } else {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO,"Client: Creation Requests failed");
+        }
+    } else {
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO,"Client: Initialization failed");
+    }
+} 
+
+void AP_Vehicle::update_topics()
+{
+    xrce_client.updateINSTopic(AP::ins());
+}
 #endif
 
 AP_Vehicle *AP_Vehicle::_singleton = nullptr;
