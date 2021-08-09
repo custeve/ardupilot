@@ -61,6 +61,12 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(externalAHRS, "EAHRS", 8, AP_Vehicle, AP_ExternalAHRS),
 #endif
 
+#if AP_XRCE_ENABLED
+    // @Group: XRCE
+    // @Path: ../AP_XRCE_Client/AP_XRCE_Client.cpp
+    AP_SUBGROUPINFO(xrce_client, "XRCE_", 9, AP_Vehicle, AP_XRCE_Client),
+#endif
+
     AP_GROUPEND
 };
 
@@ -441,7 +447,7 @@ void AP_Vehicle::init_xrce_client()
 
 void AP_Vehicle::update_topics()
 {
-    xrce_client.updateINSTopic(AP::ins());
+    xrce_client.update();
 }
 #endif
 
