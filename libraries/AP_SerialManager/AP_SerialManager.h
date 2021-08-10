@@ -153,11 +153,8 @@ public:
         SerialProtocol_SmartAudio = 37,
         SerialProtocol_FETtecOneWire = 38,
         SerialProtocol_Torqeedo = 39,
-<<<<<<< HEAD
         SerialProtocol_AIS = 40,
-=======
-        SerialProtocol_ROS2 = 40,
->>>>>>> AP_SerialManager: added ROS2 serial type
+        SerialProtocol_ROS2 = 41,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 
