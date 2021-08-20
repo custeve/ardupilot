@@ -76,14 +76,15 @@ private:
     AP_Int8 xrce_type;
     AP_Int16 xrce_topic_key;
 
+    bool create();
+    void write();
+    void update_loop();
+
 public:
     // Constructor
     AP_XRCE_Client(uint32_t maxtopics=1);
 
     bool init();
-    bool create();
-    void write();
-    void update();
     static const struct AP_Param::GroupInfo var_info[];
 };
 

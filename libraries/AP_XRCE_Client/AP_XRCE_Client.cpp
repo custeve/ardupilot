@@ -1,4 +1,5 @@
 #include "AP_XRCE_Client.h"
+#include <GCS_MAVLink/GCS.h>
 
 #if AP_XRCE_ENABLED
 
@@ -61,6 +62,11 @@ bool AP_XRCE_Client::init()
         return false; 
     }
 
+    // create a thread for updates
+    if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_XRCE_Client::update_loop, void), "XRCE", 4096, AP_HAL::Scheduler::PRIORITY_IO, 1)) {
+        return false;
+    }
+    
     return true;
 }
 bool AP_XRCE_Client::create()
@@ -157,14 +163,24 @@ void AP_XRCE_Client::write()
     
 }
 
-void AP_XRCE_Client::update()
+void AP_XRCE_Client::update_loop()
 {
-    if (xrce_topic == nullptr) {
-        return;
+    xrce_port->begin(115200);
+    if (create()) {
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO,"Client: Initialization passed");
+    } else {
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO,"Client: Creation Requests failed");
     }
-    WITH_SEMAPHORE(csem);
-    xrce_topic->update_topic();
-    connected = uxr_run_session_time(&session,1000);
+    uint32_t counter = 0;
+    while (true) {
+        hal.scheduler->delay(1);
+        write();
+        if (++counter % 100 == 0) {
+            WITH_SEMAPHORE(csem);
+            xrce_topic->update_topic();
+            connected = uxr_run_session_time(&session,1000);
+        }
+    }
 }
 
 /*
@@ -189,12 +205,6 @@ size_t uxr_write_serial_data_platform(void* args, const uint8_t* buf, size_t len
     if (xrce_port == nullptr) {
         *errcode = 1;
         return 0;
-    }
-    static bool uart_opened;
-    if (!uart_opened) {
-        // need to make sure open happens in the thread doing the IO
-        uart_opened = true;
-        xrce_port->begin(115200);
     }
     size_t bytes_written = xrce_port->write(buf, (size_t)len);
     if (bytes_written == 0) {
