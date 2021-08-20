@@ -3,7 +3,7 @@
 #if AP_XRCE_ENABLED
 
 AP_HAL::UARTDriver *xrce_port;
-
+#include <stdio.h>
 
 const AP_Param::GroupInfo AP_XRCE_Client::var_info[]={
     // @Param: TYPE
@@ -190,6 +190,12 @@ size_t uxr_write_serial_data_platform(void* args, const uint8_t* buf, size_t len
         *errcode = 1;
         return 0;
     }
+    static bool uart_opened;
+    if (!uart_opened) {
+        // need to make sure open happens in the thread doing the IO
+        uart_opened = true;
+        xrce_port->begin(115200);
+    }
     size_t bytes_written = xrce_port->write(buf, (size_t)len);
     if (bytes_written == 0) {
         *errcode = 1;
@@ -205,6 +211,10 @@ size_t uxr_read_serial_data_platform(void* args, uint8_t* buf, size_t len, int t
         *errcode = 1;
         return 0;
     }
+    if (timeout > 0) {
+        // poll() rounds up to a system granularity, which seems to be relied on
+        timeout += 10;
+    }
     while (timeout > 0 && xrce_port->available() < len) {
         hal.scheduler->delay(1);
         timeout--;
@@ -217,6 +227,23 @@ size_t uxr_read_serial_data_platform(void* args, uint8_t* buf, size_t len, int t
     *errcode = 0;
     return bytes_read;
 }
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+// emulate clock_gettime()
+extern "C" {
+    int clock_gettime(clockid_t clk_id, struct timespec *tp);
+}
+
+int clock_gettime(clockid_t clk_id, struct timespec *tp)
+{
+    uint64_t usec = AP_HAL::micros64();
+    tp->tv_sec = usec / 1000000ULL;
+    tp->tv_nsec = usec * 1000ULL;
+    return 0;
+}
+
+#endif // HAL_BOARD_CHIBIOS
+
 #endif // AP_XRCE_ENABLED
 
 

@@ -74,7 +74,7 @@ private:
     bool connected;
 
     AP_Int8 xrce_type;
-    AP_Int16 xrce_topic_key;    
+    AP_Int16 xrce_topic_key;
 
 public:
     // Constructor
