@@ -23,7 +23,9 @@ void ModeCruise::update()
       roll when heading is locked. Heading becomes unlocked on
       any aileron or rudder input
     */
-    if (plane.channel_roll->get_control_in() != 0 || plane.channel_rudder->get_control_in() != 0) {
+    if (plane.channel_roll->get_control_in() != 0 ||
+        plane.channel_rudder->get_control_in() != 0 ||
+        plane.nav_scripting.enabled) {
         locked_heading = false;
         lock_timer_ms = 0;
     }
