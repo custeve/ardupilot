@@ -64,6 +64,9 @@ bool Mode::enter()
     plane.auto_state.vtol_mode = false;
     plane.auto_state.vtol_loiter = false;
 
+    // start with normal servo control
+    plane.auto_state.idle_mode = false;
+
     bool enter_result = _enter();
 
     if (enter_result) {

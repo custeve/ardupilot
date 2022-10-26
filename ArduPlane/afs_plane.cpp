@@ -45,7 +45,6 @@ void AP_AdvancedFailsafe_Plane::terminate_vehicle(void)
             SRV_Channels::set_output_limit(SRV_Channel::k_throttleRight, SRV_Channel::Limit::MIN);
         }
         SRV_Channels::set_output_limit(SRV_Channel::k_manual, SRV_Channel::Limit::TRIM);
-        SRV_Channels::set_output_limit(SRV_Channel::k_none, SRV_Channel::Limit::TRIM);
     }
 
     plane.servos_output();

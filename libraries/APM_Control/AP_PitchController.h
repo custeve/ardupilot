@@ -48,6 +48,8 @@ public:
     AP_Float &kD(void) { return gains.D; }
     AP_Float &kFF(void) { return gains.FF; }
 
+    float get_ng_limit(void) { return _ng_limit; }
+
 private:
     const AP_Vehicle::FixedWing &aparm;
     AP_AutoTune::ATGains gains;
@@ -71,5 +73,7 @@ private:
     float _D_gain_modifier = 1.0f;          // Gain modifier applied to the angular rate feedback to prevent excessive slew rate
     AP_Float _slew_rate_max;                // Maximum permitted angular rate control feedback servo slew rate (deg/sec)
     AP_Float _slew_rate_tau;                // Time constant used to recover gain after a slew rate exceedance (sec)
-
+    AP_Float _ng_limit;                     // normal load factor limit in the + and - direction
+    AP_Float _manoeuvre_tconst;             // Time contant from demanded pitch rate to normal acceleration (sec)
+    AP_Float _stall_speed;                  // IAS at which the vehicle stalls at a load factor of 1 (m/sec)
 };

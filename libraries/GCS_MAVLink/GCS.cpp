@@ -276,3 +276,27 @@ void gcs_out_of_space_to_send_count(mavlink_channel_t chan)
 {
     gcs().chan(chan)->out_of_space_to_send();
 }
+
+/*
+  return the most recent heartbeat time on any link
+ */
+uint32_t GCS::last_heartbeat_ms(void)
+{
+    uint32_t last_hb_ms = 0;
+    uint32_t min_hb_ms = 0xFFFFFFFF;
+    for (uint8_t i=0; i<num_gcs(); i++) {
+        GCS_MAVLINK &c = *chan(i);
+        if (c.is_private()) {
+            continue;
+        }
+        uint32_t hb_ms = c.get_last_heartbeat_time();
+        uint32_t now = AP_HAL::millis();
+        if (now - hb_ms < min_hb_ms) {
+            last_hb_ms = hb_ms;
+            min_hb_ms = now - hb_ms;
+        }
+    }
+    return last_hb_ms;
+}
+
+

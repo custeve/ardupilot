@@ -73,7 +73,7 @@ void ModeAuto::update()
         } else {
             plane.calc_throttle();
         }
-    } else {
+    } else if (!plane.in_pullup()) {
         // we are doing normal AUTO flight, the special cases
         // are for takeoff and landing
         if (nav_cmd_id != MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT) {

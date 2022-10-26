@@ -291,6 +291,15 @@ void SRV_Channels::set_output_pwm_chan_timeout(uint8_t chan, uint16_t value, uin
     }
 }
 
+// set output value for a specific function channel as a pwm value
+uint16_t SRV_Channels::get_output_pwm_chan(uint8_t chan)
+{
+    if (chan < NUM_SERVO_CHANNELS) {
+        return channels[chan].get_output_pwm();
+    }
+    return 0;
+}
+
 /*
   wrapper around hal.rcout->cork()
  */

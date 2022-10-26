@@ -852,6 +852,14 @@ private:
     void load_parameters(void) override;
     void convert_mixers(void);
 
+    /*
+      enable the fence
+     */
+    bool enable_fence(void) override;
+    bool fence_enabled(void) override;
+    float fence_distance_inside(void) override;
+    uint32_t last_heartbeat_ms(void) const override { return failsafe.last_heartbeat_ms; }
+
     // commands_logic.cpp
     void set_next_WP(const struct Location &loc);
     void do_RTL(int32_t alt);
@@ -891,6 +899,11 @@ private:
     void do_set_home(const AP_Mission::Mission_Command& cmd);
     bool start_command_callback(const AP_Mission::Mission_Command &cmd);
     bool verify_command_callback(const AP_Mission::Mission_Command& cmd);
+
+    bool in_pullup() const;
+    void do_pullup(const AP_Mission::Mission_Command &cmd);
+    bool verify_pullup(const AP_Mission::Mission_Command &cmd);
+    void stabilize_pullup(float speed_scaler);
 
     // commands.cpp
     void set_guided_WP(void);
@@ -1130,6 +1143,26 @@ private:
     };
 
     FlareMode flare_mode;
+
+    enum class PullupStage : uint8_t {
+        NONE=0,
+        WAIT_AIRSPEED,
+        WAIT_PITCH,
+        WAIT_LEVEL,
+        PUSH_NOSE_DOWN
+    };
+
+    static const struct AP_Param::GroupInfo var_pullup[];
+
+    struct {
+        PullupStage stage;
+        AP_Float elev_offset; // fraction of full elevator applied during WAIT_AIRSPEED and released during WAIT_PITCH
+        AP_Float ng_limit;
+        AP_Float ng_jerk_limit;
+        AP_Int16 pitch_dem_cd;
+        float ng_demand;
+    } pullup;
+
 
 public:
     void failsafe_check(void);

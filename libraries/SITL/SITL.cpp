@@ -50,7 +50,7 @@ const AP_Param::GroupInfo SITL::var_info[] = {
     AP_GROUPINFO("WIND_SPD",       9, SITL,  wind_speed,  0),
     AP_GROUPINFO("WIND_DIR",      10, SITL,  wind_direction,  180),
     AP_GROUPINFO("WIND_TURB",     11, SITL,  wind_turbulance,  0),
-    AP_GROUPINFO("SERVO_SPEED",   16, SITL,  servo_speed,  0.14),
+    AP_SUBGROUPEXTENSION("",      16, SITL,  var_servo),
     AP_GROUPINFO("BATT_VOLTAGE",  19, SITL,  batt_voltage,  12.6f),
     AP_GROUPINFO("BATT_CAP_AH",   20, SITL,  batt_capacity_ah,  0),
     AP_GROUPINFO("SONAR_GLITCH",  23, SITL,  sonar_glitch, 0),
@@ -226,6 +226,13 @@ const AP_Param::GroupInfo SITL::var_info3[] = {
     AP_SUBGROUPINFO(baro[1], "BAR2_", 35, SITL, SITL::BaroParm),
     AP_SUBGROUPINFO(baro[2], "BAR3_", 36, SITL, SITL::BaroParm),
 
+    // a method to force alt change for testing
+    AP_GROUPINFO("SET_ALT", 37, SITL, setalt, 0),
+    AP_GROUPINFO("SET_PITCH", 38, SITL, setpitch, 0),
+    AP_GROUPINFO("SET_SPEED", 39, SITL, setspeed, 0),
+
+    AP_GROUPINFO("BLN_BURST", 40, SITL, balloon_burst_amsl, 30000),
+    AP_GROUPINFO("BLN_RATE",  41, SITL, balloon_rate, 5.5),
 
     // user settable parameters for the 1st airspeed sensor
     AP_GROUPINFO("ARSPD_RND",     50, SITL,  arspd_noise[0], 2.0),
@@ -302,6 +309,14 @@ const AP_Param::GroupInfo SITL::var_gps[] = {
     AP_GROUPINFO("GPS2_ACC",      43, SITL,  gps_accuracy[1], 0.3),
     AP_GROUPINFO("GPS2_VERR",     44, SITL,  gps_vel_err[1], 0),
 
+    AP_GROUPEND
+};
+
+// servo SITL parameters
+const AP_Param::GroupInfo SITL::var_servo[] = {
+    AP_GROUPINFO("SERVO_SPEED",   1, SITL,  servo_speed, 0.15),
+    AP_GROUPINFO("SERVO_DELAY",   2, SITL,  servo_delay, 0.01),
+    AP_GROUPINFO("SERVO_FILTER",  3, SITL,  servo_filter, 50),
     AP_GROUPEND
 };
 

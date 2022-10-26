@@ -173,6 +173,7 @@ include GCS_MAVLink/GCS.h
 singleton GCS alias gcs
 singleton GCS method send_text void MAV_SEVERITY'enum MAV_SEVERITY_EMERGENCY MAV_SEVERITY_DEBUG "%s"'literal string
 singleton GCS method set_message_interval MAV_RESULT'enum uint8_t 0 MAVLINK_COMM_NUM_BUFFERS uint32_t 0U UINT32_MAX int32_t -1 INT32_MAX
+singleton GCS method last_heartbeat_ms uint32_t
 
 include AP_Vehicle/AP_Vehicle.h
 singleton AP_Vehicle alias vehicle
@@ -191,6 +192,10 @@ singleton AP_Vehicle method set_steering_and_throttle boolean float -1 1 float -
 singleton AP_Vehicle method get_wp_distance_m boolean float'Null
 singleton AP_Vehicle method get_wp_bearing_deg boolean float'Null
 singleton AP_Vehicle method get_wp_crosstrack_error_m boolean float'Null
+singleton AP_Vehicle method enable_fence boolean
+singleton AP_Vehicle method fence_enabled boolean
+singleton AP_Vehicle method fence_distance_inside float
+singleton AP_Vehicle method last_heartbeat_ms uint32_t
 
 include AP_SerialLED/AP_SerialLED.h
 singleton AP_SerialLED alias serialLED
@@ -204,6 +209,7 @@ singleton SRV_Channels alias SRV_Channels
 singleton SRV_Channels method find_channel boolean SRV_Channel::Aux_servo_function_t'enum SRV_Channel::k_none SRV_Channel::k_nr_aux_servo_functions-1 uint8_t'Null
 singleton SRV_Channels method set_output_pwm void SRV_Channel::Aux_servo_function_t'enum SRV_Channel::k_none SRV_Channel::k_nr_aux_servo_functions-1 uint16_t 0 UINT16_MAX
 singleton SRV_Channels method set_output_pwm_chan void uint8_t 0 NUM_SERVO_CHANNELS-1 uint16_t 0 UINT16_MAX
+singleton SRV_Channels method get_output_pwm_chan uint16_t uint8_t 0 NUM_SERVO_CHANNELS-1
 singleton SRV_Channels method set_output_pwm_chan_timeout void uint8_t 0 NUM_SERVO_CHANNELS-1 uint16_t 0 UINT16_MAX uint16_t 0 UINT16_MAX
 singleton SRV_Channels method set_output_scaled void SRV_Channel::Aux_servo_function_t'enum SRV_Channel::k_none SRV_Channel::k_nr_aux_servo_functions-1 int16_t INT16_MIN INT16_MAX
 singleton SRV_Channels method get_output_pwm boolean SRV_Channel::Aux_servo_function_t'enum SRV_Channel::k_none SRV_Channel::k_nr_aux_servo_functions-1 uint16_t'Null
@@ -220,6 +226,7 @@ include RC_Channel/RC_Channel.h
 singleton RC_Channels alias rc
 singleton RC_Channels method get_pwm boolean uint8_t 1 NUM_RC_CHANNELS uint16_t'Null
 singleton RC_Channels method find_channel_for_option RC_Channel RC_Channel::AUX_FUNC'enum 0 UINT16_MAX
+singleton RC_Channels method set_override void uint8_t 0 NUM_RC_CHANNELS-1 int16_t INT16_MIN INT16_MAX uint32_t 0U UINT32_MAX
 
 include AP_SerialManager/AP_SerialManager.h
 
@@ -303,3 +310,11 @@ include ../ArduPlane/quadplane.h depends APM_BUILD_TYPE(APM_BUILD_ArduPlane)
 singleton QuadPlane alias quadplane
 singleton QuadPlane depends APM_BUILD_TYPE(APM_BUILD_ArduPlane)
 singleton QuadPlane method in_vtol_mode boolean
+
+include AP_Parachute/AP_Parachute.h
+singleton AP_Parachute alias parachute
+singleton AP_Parachute method release void
+singleton AP_Parachute method released boolean
+
+singleton AP_AdvancedFailsafe alias AFS
+singleton AP_AdvancedFailsafe method should_crash_vehicle boolean

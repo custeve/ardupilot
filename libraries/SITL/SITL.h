@@ -54,8 +54,8 @@ struct sitl_fdm {
     double rollRate, pitchRate, yawRate; // degrees/s/s in body frame
     double rollDeg, pitchDeg, yawDeg;    // euler angles, degrees
     Quaternion quaternion;
-    double airspeed; // m/s
-    Vector3f velocity_air_bf; // velocity relative to airmass, body frame
+    double airspeed; // m/s, EAS
+    Vector3f velocity_air_bf; // velocity relative to airmass, body frame, TAS
     double battery_voltage; // Volts
     double battery_current; // Amps
     double battery_remaining; // Ah, if non-zero capacity
@@ -100,6 +100,7 @@ public:
         AP_Param::setup_object_defaults(this, var_gps);
         AP_Param::setup_object_defaults(this, var_mag);
         AP_Param::setup_object_defaults(this, var_ins);
+        AP_Param::setup_object_defaults(this, var_servo);
 #ifdef SFML_JOYSTICK
         AP_Param::setup_object_defaults(this, var_sfml_joystick);
 #endif // SFML_JOYSTICK
@@ -155,6 +156,7 @@ public:
     static const struct AP_Param::GroupInfo var_gps[];
     static const struct AP_Param::GroupInfo var_mag[];
     static const struct AP_Param::GroupInfo var_ins[];
+    static const struct AP_Param::GroupInfo var_servo[];
 #ifdef SFML_JOYSTICK
     static const struct AP_Param::GroupInfo var_sfml_joystick[];
 #endif //SFML_JOYSTICK
@@ -176,7 +178,10 @@ public:
     AP_Vector3f mag_offdiag[HAL_COMPASS_MAX_SENSORS];  // off-diagonal corrections
     AP_Int8 mag_orient[HAL_COMPASS_MAX_SENSORS];   // external compass orientation
     AP_Int8 mag_fail[HAL_COMPASS_MAX_SENSORS];   // fail magnetometer, 1 for no data, 2 for freeze
-    AP_Float servo_speed; // servo speed in seconds
+
+    AP_Float servo_speed; // servo speed in seconds per 60 degrees
+    AP_Float servo_delay; // servo delay in seconds
+    AP_Float servo_filter; // servo 2p filter in Hz
 
     AP_Float sonar_glitch;// probablility between 0-1 that any given sonar sample will read as max distance
     AP_Float sonar_noise; // in metres
@@ -224,6 +229,11 @@ public:
     AP_Int32 mag_devid[MAX_CONNECTED_MAGS]; // Mag devid
     AP_Float buoyancy; // submarine buoyancy in Newtons
     AP_Int16 loop_rate_hz;
+    AP_Float setalt;
+    AP_Float setpitch;
+    AP_Float setspeed;
+    AP_Float balloon_burst_amsl; // height of ballon burst in m AMSL
+    AP_Float balloon_rate;
 
 #ifdef SFML_JOYSTICK
     AP_Int8 sfml_joystick_id;

@@ -417,6 +417,7 @@ def find_location_by_name(locname):
                                         get_user_locations_path())
     locations_filepath = os.path.join(autotest_dir, "locations.txt")
     comment_regex = re.compile("\s*#.*")
+    locname = locname.strip()
     for path in [locations_userpath, locations_filepath]:
         if not os.path.isfile(path):
             continue
@@ -430,7 +431,7 @@ def find_location_by_name(locname):
                 if name == locname:
                     return [ (float)(x) for x in loc.split(",") ]
 
-    print("Failed to find location (%s)" % cmd_opts.location)
+    print("Failed to find location (%s)" % locname)
     sys.exit(1)
 
 
@@ -618,6 +619,8 @@ def start_vehicle(binary, opts, stuff, spawns=None):
             print("The parameter file (%s) does not exist" %
                   (opts.add_param_file,))
             sys.exit(1)
+        if path is None:
+            path = ""
         path += "," + str(opts.add_param_file)
         progress("Adding parameters from (%s)" % (str(opts.add_param_file),))
     if opts.OSDMSP:

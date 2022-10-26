@@ -33,6 +33,7 @@
 #include "SIM_Buzzer.h"
 #include "SIM_Battery.h"
 #include <Filter/Filter.h>
+#include "ServoModel.h"
 
 namespace SITL {
 
@@ -106,6 +107,7 @@ public:
         return velocity_ef;
     }
 
+    // return TAS airspeed in earth frame
     const Vector3f &get_velocity_air_ef(void) const {
         return velocity_air_ef;
     }
@@ -161,17 +163,19 @@ protected:
     Matrix3f dcm;                        // rotation matrix, APM conventions, from body to earth
     Vector3f gyro;                       // rad/s
     Vector3f velocity_ef;                // m/s, earth frame
-    Vector3f wind_ef;                    // m/s, earth frame
-    Vector3f velocity_air_ef;            // velocity relative to airmass, earth frame
-    Vector3f velocity_air_bf;            // velocity relative to airmass, body frame
+    Vector3f wind_ef;                    // reciprocal velocity vector of air mass, m/s, earth frame
+    Vector3f velocity_air_ef;            // velocity relative to airmass, earth frame, TAS
+    Vector3f velocity_air_bf;            // velocity relative to airmass, body frame, TAS
     Vector3f position;                   // meters, NED from origin
     float mass;                          // kg
     float external_payload_mass;         // kg
     Vector3f accel_body{0.0f, 0.0f, -GRAVITY_MSS}; // m/s/s NED, body frame
-    float airspeed;                      // m/s, apparent airspeed
-    float airspeed_pitot;                // m/s, apparent airspeed, as seen by fwd pitot tube
+    float airspeed;                      // m/s, EAS airspeed
+    float airspeed_pitot;                // m/s, EAS airspeed, as seen by fwd pitot tube
     float battery_voltage = -1.0f;
     float battery_current;
+    float eas2tas = 1.0;
+    float air_density = SSL_AIR_DENSITY;
 
     // battery model
     Battery battery;
@@ -235,6 +239,7 @@ protected:
         GROUND_BEHAVIOR_NO_MOVEMENT,
         GROUND_BEHAVIOR_FWD_ONLY,
         GROUND_BEHAVIOR_TAILSITTER,
+        GROUND_BEHAVIOUR_NOSESITTER,
     } ground_behavior;
 
     bool use_smoothing;
@@ -279,10 +284,14 @@ protected:
     void update_wind(const struct sitl_input &input);
 
     // return filtered servo input as -1 to 1 range
-    float filtered_idx(float v, uint8_t idx);
-    float filtered_servo_angle(const struct sitl_input &input, uint8_t idx);
+    float filtered_servo_angle(const struct sitl_input &input, uint8_t idx, uint16_t range=500);
+
+    // return filtered servo input as 0 to 1 range
     float filtered_servo_range(const struct sitl_input &input, uint8_t idx);
 
+    // setup filtering for servo
+    void filtered_servo_setup(uint8_t idx, uint16_t pwm_min, uint16_t pwm_max, float deflection_deg);
+    
     // extrapolate sensors by a given delta time in seconds
     void extrapolate_sensors(float delta_time);
 
@@ -294,6 +303,9 @@ protected:
 
     // get local thermal updraft
     float get_local_updraft(Vector3f currentPos);
+
+    // update EAS speeds
+    void update_eas_airspeed();
 
 private:
     uint64_t last_time_us;
@@ -315,7 +327,7 @@ private:
         Location location;
     } smoothing;
 
-    LowPassFilterFloat servo_filter[4];
+    ServoModel servo_filter[16];
 
     Buzzer *buzzer;
     Sprayer *sprayer;

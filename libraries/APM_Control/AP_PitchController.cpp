@@ -58,7 +58,7 @@ const AP_Param::GroupInfo AP_PitchController::var_info[] = {
 
 	// @Param: RMAX_UP
 	// @DisplayName: Pitch up max rate
-	// @Description: Maximum pitch up rate that the pitch controller demands (degrees/sec) in ACRO mode.
+	// @Description: Maximum pitch up rate that the pitch controller demands (degrees/sec) in ACRO mode. Normal g loading should be limited using the PTCH2SRV_NGLIM parameter.
 	// @Range: 0 100
 	// @Units: deg/s
 	// @Increment: 1
@@ -67,7 +67,7 @@ const AP_Param::GroupInfo AP_PitchController::var_info[] = {
 
 	// @Param: RMAX_DN
 	// @DisplayName: Pitch down max rate
-	// @Description: This sets the maximum nose down pitch rate that the controller will demand (degrees/sec). Setting it to zero disables the limit.
+	// @Description: This sets the maximum nose down pitch rate that the controller will demand (degrees/sec). Setting it to zero disables the limit. Normal g loading should be limited using the PTCH2SRV_NGLIM parameter.
 	// @Range: 0 100
 	// @Units: deg/s
 	// @Increment: 1
@@ -116,6 +116,32 @@ const AP_Param::GroupInfo AP_PitchController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("SRTAU", 10, AP_PitchController, _slew_rate_tau, 1.0f),
 
+    // @Param: NGLIM
+    // @DisplayName: Normal load factor limit
+    // @Description: This limits the demanded pitch rate to a value that limits g loading to the value specified in the + and - direction. This limit is additional to that specified by PTCH2SRV_RMAX_UP and PTCH2SRV_RMAX_DN.
+    // @Range: 1.5 10.0
+    // @Increment: 0.5
+    // @User: Advanced
+    AP_GROUPINFO("NGLIM", 11, AP_PitchController, _ng_limit, 2.0f),
+
+    // @Param: MGTC
+    // @DisplayName: Manoeuvre g time constant
+    // @Description: This sets the time constant used by the g limiter to compensate for the lag from pitch rate to normal acceleration when flying at IAS = SCALING_SPEED.
+    // @Units: s
+    // @Range: 0.0 1.0
+    // @Increment: 0.05
+    // @User: Advanced
+    AP_GROUPINFO("MGTC", 12, AP_PitchController, _manoeuvre_tconst, 0.5f),
+
+    // @Param: VSTALL
+    // @DisplayName: Stall speed
+    // @Description: IAS at which the vehicle stalls at 1g load factor. This is used to limit the pitch rate demand as a function of IAS such that the AoA limit is not exceeded. Set to 0 if not known and the AoA will not be limited. Setting to a value above stall causes AoA to be limited to a lower value and vice-versa.
+    // @Units: m/s
+    // @Range: 0.0 100.0
+    // @Increment: 0.5
+    // @User: Advanced
+    AP_GROUPINFO("VSTALL", 13, AP_PitchController, _stall_speed, 0.0f),
+
     AP_GROUPEND
 };
 
@@ -131,6 +157,43 @@ const AP_Param::GroupInfo AP_PitchController::var_info[] = {
 */
 int32_t AP_PitchController::_get_rate_out(float desired_rate, float scaler, bool disable_integrator, float aspeed)
 {
+    // apply pitch rate limits that prevent specified normal g loading being exceeded
+    float VTAS = aspeed * _ahrs.get_EAS2TAS();
+	const float VTAS_dot = _ahrs.get_accel().x + GRAVITY_MSS * _ahrs.get_DCM_rotation_body_to_ned().c.x;
+	if (is_positive(_manoeuvre_tconst)) {
+		const float tconst_adj = _manoeuvre_tconst * sq(scaler);
+		VTAS += VTAS_dot * tconst_adj;
+	}
+    const float g_div_vtas = GRAVITY_MSS / MAX(VTAS,0.1);
+    const float zero_ng_pitch_rate = - g_div_vtas * _ahrs.get_DCM_rotation_body_to_ned().c.z;
+	float load_factor_limit = MAX(_ng_limit, 1.5);
+
+	// custom hack to adjust maximum AoA protection for Reynolds number effects
+	const float air_density_ratio = 1.0f / sq(_ahrs.get_EAS2TAS());
+	const float density_ratio_bp[2]     = {0.15220f, 0.02092f}; // must be montonically decreasing
+	const float stall_speed_ratio_bp[2] = {1.00000f, 1.21771f};
+	float max_aoa_speed = _stall_speed;
+	if (air_density_ratio > density_ratio_bp[0]) {
+		max_aoa_speed *= stall_speed_ratio_bp[0];
+	} else if (air_density_ratio > density_ratio_bp[1]) {
+		const float weighting = (air_density_ratio - density_ratio_bp[1]) / (density_ratio_bp[0] - density_ratio_bp[1]);
+		max_aoa_speed *= (stall_speed_ratio_bp[0] * weighting + stall_speed_ratio_bp[1] * (1.0f - weighting));
+	} else {
+		max_aoa_speed *= stall_speed_ratio_bp[1];
+	}
+
+	const float maneouvre_speed = max_aoa_speed * sqrtf(load_factor_limit);
+	if (is_positive(_stall_speed) && aspeed <  maneouvre_speed) {
+		// adjust load factor limit to prevent AoA exceedancee with a small margin above
+		// 1.0 to prevent a failed airspeed sensor causing loss of pitch control
+		load_factor_limit *= sq(aspeed/maneouvre_speed);
+		load_factor_limit = MAX(load_factor_limit, 1.1f);
+	}
+    const float ng_pitch_rate = g_div_vtas * load_factor_limit;
+    const float max_pitch_rate_dps = degrees(zero_ng_pitch_rate + ng_pitch_rate);
+    const float min_pitch_rate_dps = degrees(zero_ng_pitch_rate - ng_pitch_rate);
+    desired_rate = constrain_float(desired_rate, min_pitch_rate_dps, max_pitch_rate_dps);
+
 	uint32_t tnow = AP_HAL::millis();
 	uint32_t dt = tnow - _last_t;
 	
@@ -240,27 +303,7 @@ int32_t AP_PitchController::_get_rate_out(float desired_rate, float scaler, bool
 
 	_last_out += _pid_info.I;
 
-    /*
-      when we are past the users defined roll limit for the
-      aircraft our priority should be to bring the aircraft back
-      within the roll limit. Using elevator for pitch control at
-      large roll angles is ineffective, and can be counter
-      productive as it induces earth-frame yaw which can reduce
-      the ability to roll. We linearly reduce elevator input when
-      beyond the configured roll limit, reducing to zero at 90
-      degrees
-    */
-    float roll_wrapped = labs(_ahrs.roll_sensor);
-    if (roll_wrapped > 9000) {
-        roll_wrapped = 18000 - roll_wrapped;
-    }
-    if (roll_wrapped > aparm.roll_limit_cd + 500 && aparm.roll_limit_cd < 8500 &&
-        labs(_ahrs.pitch_sensor) < 7000) {
-        float roll_prop = (roll_wrapped - (aparm.roll_limit_cd+500)) / (float)(9000 - aparm.roll_limit_cd);
-        _last_out *= (1 - roll_prop);
-    }
-    
-	// Convert to centi-degrees and constrain
+    // Convert to centi-degrees and constrain
 	return constrain_float(_last_out * 100, -4500, 4500);
 }
 
@@ -351,10 +394,9 @@ int32_t AP_PitchController::get_servo_out(int32_t angle_err, float scaler, bool 
 	// Calculate the desired pitch rate (deg/sec) from the angle error
 	float desired_rate = angle_err * 0.01f / gains.tau;
 	
-	// limit the maximum pitch rate demand. Don't apply when inverted
-	// as the rates will be tuned when upright, and it is common that
-	// much higher rates are needed inverted	
+	// legacy rate limit that doesn't use airspeed
 	if (!inverted) {
+		// legacy 
 		if (_max_rate_neg && desired_rate < -_max_rate_neg) {
 			desired_rate = -_max_rate_neg;
 		} else if (gains.rmax && desired_rate > gains.rmax) {
@@ -369,6 +411,25 @@ int32_t AP_PitchController::get_servo_out(int32_t angle_err, float scaler, bool 
 	// Apply the turn correction offset
 	desired_rate = desired_rate + rate_offset;
 
+    /*
+      when we are past the users defined roll limit for the aircraft
+      our priority should be to bring the aircraft back within the
+      roll limit. Using elevator for pitch control at large roll
+      angles is ineffective, and can be counter productive as it
+      induces earth-frame yaw which can reduce the ability to roll. We
+      linearly reduce pitch demanded rate when beyond the configured
+      roll limit, reducing to zero at 90 degrees
+    */
+    float roll_wrapped = labs(_ahrs.roll_sensor);
+    if (roll_wrapped > 9000) {
+        roll_wrapped = 18000 - roll_wrapped;
+    }
+    const float roll_limit_margin = MIN(aparm.roll_limit_cd + 500.0, 8500.0);
+    if (roll_wrapped > roll_limit_margin && labs(_ahrs.pitch_sensor) < 7000) {
+        float roll_prop = (roll_wrapped - roll_limit_margin) / (float)(9000 - roll_limit_margin);
+        desired_rate *= (1 - roll_prop);
+    }
+    
     return _get_rate_out(desired_rate, scaler, disable_integrator, aspeed);
 }
 

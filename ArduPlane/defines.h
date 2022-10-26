@@ -179,3 +179,6 @@ enum class FenceAutoEnable : uint8_t {
     AutoDisableFloorOnly=2,
     WhenArmed=3
 };
+
+// additional fence action
+#define FENCE_ACTION_PARACHUTE 10

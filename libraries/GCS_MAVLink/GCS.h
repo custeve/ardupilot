@@ -955,6 +955,9 @@ public:
 
     uint8_t get_channel_from_port_number(uint8_t port_num);
 
+    // return most recent heartbeat time
+    uint32_t last_heartbeat_ms(void);
+
 protected:
 
     virtual uint8_t sysid_this_mav() const = 0;

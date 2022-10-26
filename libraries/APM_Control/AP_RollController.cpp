@@ -99,6 +99,15 @@ const AP_Param::GroupInfo AP_RollController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("SRTAU", 8, AP_RollController, _slew_rate_tau, 1.0f),
 
+	// @Param: AMAX
+	// @DisplayName: Maximum Roll Acceleration
+	// @Description: Maximum roll acceleration that the roll controller demands (degrees/sec^2).
+	// @Range: 0 1800
+	// @Units: deg/s/s
+	// @Increment: 1
+	// @User: Advanced
+	AP_GROUPINFO("AMAX",   9, AP_RollController, gains.amax, 0),
+
     AP_GROUPEND
 };
 
@@ -235,7 +244,7 @@ int32_t AP_RollController::get_servo_out(int32_t angle_err, float scaler, bool d
     if (gains.tau < 0.1f) {
         gains.tau.set(0.1f);
     }
-	
+
 	// Calculate the desired roll rate (deg/sec) from the angle error
 	float desired_rate = angle_err * 0.01f / gains.tau;
 
@@ -246,6 +255,22 @@ int32_t AP_RollController::get_servo_out(int32_t angle_err, float scaler, bool d
         desired_rate = gains.rmax;
     }
 
+	if (gains.amax) {
+		uint32_t tnow = AP_HAL::millis();
+		uint32_t dt = tnow - _last_t_get_servo_out;
+		if (_last_t_get_servo_out == 0 || dt > 1000) {
+			dt = 0;
+			_last_rate_demand = _ahrs.get_gyro().x;
+		}
+		_last_t_get_servo_out = tnow;
+		const float max_increment = (float)gains.amax * (0.001f * (float)dt);
+		if (desired_rate - _last_rate_demand > max_increment) {
+			desired_rate = _last_rate_demand + max_increment;
+		} else if (desired_rate - _last_rate_demand < -max_increment) {
+			desired_rate = _last_rate_demand - max_increment;
+		}
+		_last_rate_demand = desired_rate;
+	}
     return _get_rate_out(desired_rate, scaler, disable_integrator);
 }
 

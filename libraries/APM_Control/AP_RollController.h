@@ -60,7 +60,9 @@ private:
     AP_AutoTune::ATGains gains;
     AP_AutoTune autotune;
 	uint32_t _last_t;
+	uint32_t _last_t_get_servo_out;
 	float _last_out;
+    float _last_rate_demand;
 
     AP_Logger::PID_Info _pid_info;
 

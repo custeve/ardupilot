@@ -210,6 +210,20 @@ bool AP_Arming_Plane::arm(const AP_Arming::Method method, const bool do_arming_c
         return false;
     }
 
+#if GEOFENCE_ENABLED == ENABLED
+    // if prearm checks are disabled we may need to autoenable the
+    // fence here. Note that this can result in an immediate fence
+    // breach. That is deliberate, as it allows for testing of fence
+    // breach action on the ground
+    if (!do_arming_checks && plane.g.fence_autoenable == FenceAutoEnable::WhenArmed) {
+        if (!plane.geofence_set_enabled(true)) {
+            gcs().send_text(MAV_SEVERITY_WARNING, "Fence: cannot enable for arming");
+        } else {
+            gcs().send_text(MAV_SEVERITY_WARNING, "Fence: auto-enabled for arming");
+        }
+    }
+#endif
+    
     if ((method == Method::AUXSWITCH) && (plane.quadplane.options & QuadPlane::OPTION_AIRMODE)) {
         // if no airmode switch assigned, honour the QuadPlane option bit:
         if (rc().find_channel_for_option(RC_Channel::AUX_FUNC::AIRMODE) == nullptr) {

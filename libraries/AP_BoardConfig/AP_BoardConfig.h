@@ -189,6 +189,9 @@ public:
 
 #if HAL_HAVE_IMU_HEATER
     void set_imu_temp(float current_temp_c);
+    float get_heater_duty_cycle(void) {
+        return heater.output;
+    }
 #endif
 
 private:

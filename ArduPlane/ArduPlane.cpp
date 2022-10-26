@@ -80,8 +80,8 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK_CLASS(AP_Scheduler, &plane.scheduler, update_logging,         0.2,    100),
     SCHED_TASK(compass_save,          0.1,    200),
     SCHED_TASK(Log_Write_Fast,         25,    300),
-    SCHED_TASK(update_logging1,        25,    300),
-    SCHED_TASK(update_logging2,        25,    300),
+    SCHED_TASK(update_logging1,        50,    300),
+    SCHED_TASK(update_logging2,        50,    300),
 #if HAL_SOARING_ENABLED
     SCHED_TASK(update_soaring,         50,    400),
 #endif
@@ -169,8 +169,9 @@ void Plane::ahrs_update()
  */
 void Plane::update_speed_height(void)
 {
-    if (control_mode->does_auto_throttle()) {
-	    // Call TECS 50Hz update. Note that we call this regardless of
+    if (control_mode->does_auto_throttle() &&
+        !auto_state.idle_mode && !in_pullup()) {
+        // Call TECS 50Hz update. Note that we call this regardless of
 	    // throttle suppressed, as this needs to be running for
 	    // takeoff detection
         SpdHgt_Controller->update_50hz();
@@ -424,6 +425,9 @@ void Plane::update_control_mode(void)
     if (quadplane.in_vtol_mode() ||
         quadplane.in_assisted_flight()) {
         ahrs.set_fly_forward(false);
+    } else if (auto_state.idle_mode) {
+        // don't fuse airspeed when in balloon lift
+        ahrs.set_fly_forward(false);
     } else if (flight_stage == AP_Vehicle::FixedWing::FLIGHT_LAND) {
         ahrs.set_fly_forward(landing.is_flying_forward());
     } else {
@@ -481,8 +485,8 @@ void Plane::update_alt()
 
     update_flight_stage();
 
-    if (control_mode->does_auto_throttle() && !throttle_suppressed) {
-
+    if (control_mode->does_auto_throttle() &&
+        !auto_state.idle_mode && !in_pullup()) {
         float distance_beyond_land_wp = 0;
         if (flight_stage == AP_Vehicle::FixedWing::FLIGHT_LAND && current_loc.past_interval_finish_line(prev_WP_loc, next_WP_loc)) {
             distance_beyond_land_wp = current_loc.get_distance(next_WP_loc);
