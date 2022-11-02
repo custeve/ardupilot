@@ -17,12 +17,14 @@ args = parser.parse_args()
 files = list(dict.fromkeys(args.files))
 nfiles = len(files)
 
-if args.mission >= 6:
-    kmz = "missions/high.kmz"
-    fence = "missions/high.fence"
-else:
-    kmz = "missions/low.kmz"
-    fence = "missions/low.fence"
+# if args.mission >= 6:
+#     kmz = "missions/high.kmz"
+#     fence = "missions/high.fence"
+# else:
+#     kmz = "missions/low.kmz"
+#     fence = "missions/low.fence"
+
+fence = "missions_png_1122/png_1122.fen"
 
 graphed = set()
 

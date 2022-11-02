@@ -283,7 +283,7 @@ end
 function update()
    update_lights()
    check_AFS()
-   report_antenna()
+   -- report_antenna()
    if arming:is_armed() and vehicle:get_mode() == MODE_AUTO then
       check_chute()
       adjust_target_speed()
