@@ -7,6 +7,8 @@ import argparse
 parser = argparse.ArgumentParser(description='run glider test')
 parser.add_argument('--mission', type=int, default=0, help='mission number')
 parser.add_argument('--no-ui', action='store_true', help='disable UI display')
+parser.add_argument('--smallfence', action='store_true', help='use small fence')
+
 args = parser.parse_args()
 
 if args.mission == 0:
@@ -64,10 +66,12 @@ location = "PNG%u" % args.mission
 # else:
 #     fence = "missions/low.fence"
 #     kmz = "missions/low.kmz"
-
-fence = "missions_png_1122/png_1122.fen"
-kmz = "missions_png_11ss/high.kmz"
-
+if args.smallfence:
+    fence = "missions_png_1122/png_1122_small.fen"
+    kmz = "missions_png_11ss/high.kmz"
+else:
+    fence = "missions_png_1122/png_1122.fen"
+    kmz = "missions_png_11ss/high.kmz"
 cmd = '../../Tools/autotest/sim_vehicle.py -D -f PlaneJSON -G -L %s --speedup 100 --aircraft test' % location
 print(cmd)
 if sys.version_info[0] >= 3:
@@ -93,8 +97,8 @@ mavproxy.expect("Received")
 #     print("ENABLING speed scheduling")
 #     mavproxy.send("param set SCR_USER4 1\n")
 # else:
-print("DISABLNG speed scheduling")
-mavproxy.send("param set SCR_USER4 0\n")
+print("Disable speed scheduling")
+mavproxy.send("param set SCR_USER4 1\n")
 
 mavproxy.send('''
 set altreadout 0
