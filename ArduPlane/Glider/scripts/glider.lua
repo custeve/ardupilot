@@ -1,4 +1,7 @@
+-- ANY CHANGES TO THIS SCRIPT NEED A VERSION CHANGE RECORDED AT BOTTOM!!!
+
 local MODE_AUTO = 10
+local MISSION_WAIT_ALT_CMD = 83
 
 local FEET_TO_METERS = 0.3048
 local METERS_TO_FEET = 1.0/FEET_TO_METERS
@@ -16,6 +19,8 @@ local K_PARACHUTE = 27
 
 local NAVLIGHTS_CHAN = 8
 local BALLOON_RELEASE_CHAN = 10
+
+local last_mfs_state = 0
 
 -- chute checking is enabled when 50m above chute deploy alt
 local chute_check_armed = false
@@ -197,13 +202,16 @@ function update_lights()
 end
 
 function check_AFS()
-   if arming:is_armed() and not vehicle:fence_enabled() then
+   if arming:is_armed() then
       fence_margin = param:get("SCR_USER2")
       if fence_margin <= 0 then
          fence_margin = FENCE_MARGIN_DEFAULT
       end
       local margin = vehicle:fence_distance_inside()
-      if balloon_has_released() or margin >= fence_margin then
+      
+      -- only enable the fence if the ac is released and 
+      -- we are inside the margin
+      if (balloon_has_released() or margin >= fence_margin) then
          if not vehicle:fence_enabled() then
             if vehicle:enable_fence() then
                gcs:send_text(0, "Enabled fence")
@@ -212,7 +220,33 @@ function check_AFS()
             end
          end
       end
+      -- check if balloon not released, and in margin buffer, 
+      -- advance mission waypoint to trigger balloon release.
+      -- SCR_USER1 > 0 enables Margin Failsafe
+      if not balloon_has_released()  and param:get("SCR_USER1") > 0 then
+         if last_mfs_state == 2 then
+            local i = mission:get_current_nav_index()
+            --local m = mission:get_item(i)
+            --gcs:send_text(0, string.format("Current Index %.0f Cmd %.0f", mission:get_current_nav_index(),mission:get_current_nav_id()))
+            if mission:get_current_nav_id() == MISSION_WAIT_ALT_CMD then 
+               mission:set_current_cmd(i+1)
+               gcs:send_text(0, "Mission Advanced to Pullup")
+            end
+            last_mfs_state = 3
+         elseif margin < fence_margin and last_mfs_state < 2 then
+            last_mfs_state = 2
+            gcs:send_text(0, "!! Fence Margin Failsafe !!")
+
+         elseif margin < 2*fence_margin and last_mfs_state < 1 then
+               gcs:send_text(0, string.format("MFS Near %.0f / %.0f", margin,fence_margin))
+               last_mfs_state = 1
+         end
+         
+      end
    end
+
+
+
    if AFS:should_crash_vehicle() and not balloon_has_released() then
       gcs:send_text(0, "AFS balloon release")
       SRV_Channels:set_output_pwm_chan(BALLOON_RELEASE_CHAN-1, 2000)
@@ -293,5 +327,7 @@ function update()
 end
 
 gcs:send_text(0, string.format("Loader glider script"))
+
+gcs:send_text(0, string.format("Glider LUA V0.2 110322"))
 
 return update, 1000
