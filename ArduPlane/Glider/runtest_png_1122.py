@@ -72,7 +72,7 @@ if args.smallfence:
 else:
     fence = "missions_png_1122/png_1122.fen"
     kmz = "missions_png_11ss/high.kmz"
-cmd = '../../Tools/autotest/sim_vehicle.py -D -f PlaneJSON -G -L %s --speedup 100 --aircraft test' % location
+cmd = '../../Tools/autotest/sim_vehicle.py -D -f PlaneJSON -G -L %s --speedup 100 --aircraft png_test' % location
 print(cmd)
 if sys.version_info[0] >= 3:
     mavproxy = pexpect.spawnu(cmd, logfile=sys.stdout, timeout=300)
@@ -124,6 +124,6 @@ mavproxy.send('rc 6 2000\n')
 mavproxy.expect("Released",timeout=3600)
 mavproxy.send('disarm force\n')
 kill_all()
-os.system("ln -f logs/00000001.BIN test_runs/mission%u.bin" % args.mission)
-os.system("ls -l test_runs/mission%u.bin" % args.mission)
+#os.system("ln -f logs/00000001.BIN test_runs/mission%u.bin" % args.mission)
+#os.system("ls -l test_runs/mission%u.bin" % args.mission)
 
