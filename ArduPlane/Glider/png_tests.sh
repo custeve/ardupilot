@@ -14,7 +14,9 @@ for i in $(seq 1 2); do
     fi
    
    nice mavtogpx.py ./png_test/logs/$(date +%Y-%m-%d)/flight$i/flight.tlog
-   nice gpsbabel -t -w -i gpx -f ./png_test/logs/$(date +%Y-%m-%d)/flight$i/flight.tlog.gpx  -o kml,units=m,floating=1,extrude=1 -F ./kml/flight$i.kml
+   nice gpsbabel -t -w -i gpx -f ./png_test/logs/$(date +%Y-%m-%d)/flight$i/flight.tlog.gpx  -o kml,units=m,line_color=FF00FFFF,floating=1,extrude=0,points=0,lines=1,tracks=1,trackdata=0 -F ./kml/flight$i.kml
+   sed -i "s/<name>GPS device/<name>Flight $i Autopilot Simulation/" kml/flight$i.kml
+   sed -i "s/<snippet\/>/<name>Flight $i Track<\/name>/" kml/flight$i.kml
 #   (nice ./graphs/filter.sh test_runs/mission$i.bin &&
 #    nice ./graphs/graph_logs.py --mission $i test_runs/mission$i-glide.bin &&
 #    nice ./tocsv.sh test_runs/mission$i-glide.bin) &
