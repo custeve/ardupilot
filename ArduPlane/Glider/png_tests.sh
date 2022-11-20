@@ -7,7 +7,7 @@ fi
 rm -rf kml
 mkdir kml
 
-for i in $(seq 1 2); do
+for i in $(seq 1 3); do
     if [ $# -eq 0 ]; then
         cp -rf ./missions_png_1122/wind$i.lua ./scripts/wind.lua
         nice ./runtest_png_1122.py --mission $i --no-ui
