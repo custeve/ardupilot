@@ -553,22 +553,22 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
 
 static const ap_message STREAM_RAW_SENSORS_msgs[] = {
     MSG_RAW_IMU,
-    MSG_SCALED_IMU2,
-    MSG_SCALED_IMU3,
+    //MSG_SCALED_IMU2,
+    //MSG_SCALED_IMU3,
     MSG_SCALED_PRESSURE,
-    MSG_SCALED_PRESSURE2,
-    MSG_SCALED_PRESSURE3,
+    //MSG_SCALED_PRESSURE2,
+    //MSG_SCALED_PRESSURE3,
     MSG_SENSOR_OFFSETS
 };
 static const ap_message STREAM_EXTENDED_STATUS_msgs[] = {
     MSG_SYS_STATUS,
-    MSG_POWER_STATUS,
-    MSG_MEMINFO,
+    //MSG_POWER_STATUS,
+    //MSG_MEMINFO,
     MSG_CURRENT_WAYPOINT,
     MSG_GPS_RAW,
-    MSG_GPS_RTK,
+    //MSG_GPS_RTK,
     MSG_GPS2_RAW,
-    MSG_GPS2_RTK,
+    //MSG_GPS2_RTK,
     MSG_NAV_CONTROLLER_OUTPUT,
     MSG_FENCE_STATUS,
     MSG_POSITION_TARGET_GLOBAL_INT,
@@ -590,7 +590,7 @@ static const ap_message STREAM_EXTRA1_msgs[] = {
     MSG_SIMSTATE,
     MSG_AHRS2,
     MSG_RPM,
-    MSG_AOA_SSA,
+    //MSG_AOA_SSA,
     MSG_PID_TUNING,
     MSG_LANDING,
     MSG_ESC_TELEMETRY,
@@ -600,7 +600,7 @@ static const ap_message STREAM_EXTRA2_msgs[] = {
     MSG_VFR_HUD
 };
 static const ap_message STREAM_EXTRA3_msgs[] = {
-    MSG_AHRS,
+    //MSG_AHRS,
     MSG_HWSTATUS,
     MSG_WIND,
     MSG_RANGEFINDER,
@@ -609,15 +609,15 @@ static const ap_message STREAM_EXTRA3_msgs[] = {
 #if AP_TERRAIN_AVAILABLE
     MSG_TERRAIN,
 #endif
-    MSG_BATTERY2,
-    MSG_BATTERY_STATUS,
+    //MSG_BATTERY2,
+    //MSG_BATTERY_STATUS,
     MSG_MOUNT_STATUS,
     MSG_OPTICAL_FLOW,
     MSG_GIMBAL_REPORT,
     MSG_MAG_CAL_REPORT,
     MSG_MAG_CAL_PROGRESS,
     MSG_EKF_STATUS_REPORT,
-    MSG_VIBRATION,
+    //MSG_VIBRATION,
 };
 static const ap_message STREAM_PARAMS_msgs[] = {
     MSG_NEXT_PARAM
