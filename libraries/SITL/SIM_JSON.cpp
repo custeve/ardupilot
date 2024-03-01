@@ -306,6 +306,8 @@ void JSON::recv_fdm(const struct sitl_input &input)
         // received airspeed directly
         airspeed = state.airspeed;
 
+    // airspeed
+    update_eas_airspeed();
         airspeed_pitot = state.airspeed;
     } else {
         // velocity relative to airmass in body frame

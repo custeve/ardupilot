@@ -473,6 +473,11 @@ void Plane::stabilize()
     }
     float speed_scaler = get_speed_scaler();
 
+    if (in_pullup()) {
+        stabilize_pullup(speed_scaler);
+        return;
+    }
+
     uint32_t now = AP_HAL::millis();
     bool allow_stick_mixing = true;
 #if HAL_QUADPLANE_ENABLED
@@ -829,4 +834,113 @@ void Plane::update_load_factor(void)
         nav_roll_cd = constrain_int32(nav_roll_cd, -roll_limit, roll_limit);
         roll_limit_cd = MIN(roll_limit_cd, roll_limit);
     }    
+}
+
+
+// Pullup control parameters
+const AP_Param::GroupInfo Plane::var_pullup[] = {
+
+    // @Param: PUP_ELEV_OFS
+    // @DisplayName: Elevator deflection used before starting pullup
+    // @Description: Elevator deflection offset from -1 to 1 while waiting for airspeed to rise before starting close loop control of the pullup.
+    // @Range: -1.0 1.0
+    // @User: Advanced
+    AP_GROUPINFO("PUP_ELEV_OFS",    1, Plane,  pullup.elev_offset, 0.1f),
+
+    // @Param: PUP_NG_LIM
+    // @DisplayName: Maximum normal load factor during pullup
+    // @Description: This is the nominal maximum value of normal load factor used during the closed loop pitch rate control of the pullup.
+    // @Range: 1.0 4.0
+    // @User: Advanced
+    AP_GROUPINFO("PUP_NG_LIM",    2, Plane,  pullup.ng_limit, 2.0f),
+
+    // @Param: PUP_NG_JERK_LIM
+    // @DisplayName: Maximum normal load factor rate of change during pullup
+    // @Description: The normal load factor used for closed loop pitch rate control of the pullup will be ramped up to the value set by PUP_NG_LIM at the rate of change set by this parameter. The parameter value specified will be scaled internally by 1/EAS2TAS.
+    // @Units: 1/s
+    // @Range: 0.1 10.0
+    // @User: Advanced
+    AP_GROUPINFO("PUP_NG_JERK_LIM",    3, Plane,  pullup.ng_jerk_limit, 4.0f),
+
+    // @Param: PUP_PITCH_CD
+    // @DisplayName: Target pitch angle during pullup
+    // @Description: The vehicle will attempt achieve this pitch angle during the pull-up maneouvre.
+    // @Units: cdeg
+    // @Range: -500 1500
+    // @User: Advanced
+    AP_GROUPINFO("PUP_PITCH_CD", 4, Plane,  pullup.pitch_dem_cd, 300),
+
+    AP_GROUPEND
+};
+
+/*
+  stabilize during pullup from balloon drop
+ */
+void Plane::stabilize_pullup(float speed_scaler)
+{
+    switch (pullup.stage) {
+    case PullupStage::WAIT_AIRSPEED: {
+        steering_control.rudder = 0;
+        steering_control.steering = 0;
+        SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pullup.elev_offset*4500);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, 0);
+        plane.nav_pitch_cd = 0;
+        plane.nav_roll_cd = 0;
+        uint32_t now = AP_HAL::millis();
+        if (now - last_stabilize_ms > 1000) {
+            pitchController.reset_I();
+            yawController.reset_I();
+        }
+        last_stabilize_ms = now;
+        SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, rollController.get_rate_out(0, speed_scaler));
+        logger.Write_PID(LOG_PIDR_MSG, rollController.get_pid_info());
+        pullup.ng_demand = 0.0f;
+        break;
+    }
+    case PullupStage::WAIT_PITCH: {
+        yawController.reset_I();
+        plane.nav_roll_cd = 0;
+        plane.nav_pitch_cd = 0;
+        steering_control.rudder = 0;
+        steering_control.steering = 0;
+        last_stabilize_ms = AP_HAL::millis();
+        SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, 0);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, rollController.get_rate_out(0, speed_scaler));
+        float aspeed;
+        if (ahrs.airspeed_estimate(aspeed)) {
+            // apply a rate of change limit to the ng pullup demand
+            const float ng_limit = MAX(pullup.ng_limit, 1.0f);
+            pullup.ng_demand += MAX(pullup.ng_jerk_limit / ahrs.get_EAS2TAS(), 0.1f) * scheduler.get_loop_period_s();
+            pullup.ng_demand = MIN(pullup.ng_demand, ng_limit);
+            const float VTAS_ref = ahrs.get_EAS2TAS() * aspeed;
+            const float pullup_accel = pullup.ng_demand * GRAVITY_MSS;
+            const float demanded_rate_dps = degrees(pullup_accel / VTAS_ref);
+            const uint32_t elev_trim_offset_cd = 4500.0f * pullup.elev_offset * (1.0f - pullup.ng_demand / ng_limit);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, elev_trim_offset_cd + pitchController.get_rate_out(demanded_rate_dps, speed_scaler));
+            logger.Write_PID(LOG_PIDP_MSG, pitchController.get_pid_info());
+            logger.Write_PID(LOG_PIDR_MSG, rollController.get_pid_info());
+        }
+        break;
+    }
+    case PullupStage::PUSH_NOSE_DOWN: {
+        nav_pitch_cd = aparm.pitch_limit_min_cd;
+        last_stabilize_ms = AP_HAL::millis();
+        stabilize_pitch(speed_scaler);
+        nav_roll_cd = 0;
+        stabilize_roll(speed_scaler);
+        stabilize_yaw(speed_scaler);
+        pullup.ng_demand = 0.0f;
+        break;
+    }
+    case PullupStage::WAIT_LEVEL:
+    default:
+        nav_pitch_cd = MAX((aparm.pitch_limit_min_cd + 500), pullup.pitch_dem_cd);
+        last_stabilize_ms = AP_HAL::millis();
+        stabilize_pitch(speed_scaler);
+        nav_roll_cd = 0;
+        stabilize_roll(speed_scaler);
+        stabilize_yaw(speed_scaler);
+        pullup.ng_demand = 0.0f;
+        break;
+    }
 }

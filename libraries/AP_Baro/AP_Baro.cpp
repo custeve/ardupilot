@@ -223,6 +223,15 @@ const AP_Param::GroupInfo AP_Baro::var_info[] = {
 #endif
 #endif
 
+#if BARO_MAX_INSTANCES > 2
+    // @Group: _OPTIONS
+    // @DisplayName: barometer options
+    // @Description: Options to change barometer behaviour
+    // @Bitmask: 0:Use atmospheric tables
+    // @User: Advanced
+    AP_GROUPINFO("_OPTIONS", 21, AP_Baro, _options, 0),
+#endif
+    
     AP_GROUPEND
 };
 
@@ -367,9 +376,6 @@ void AP_Baro::update_calibration()
 
     // always update the guessed ground temp
     _guessed_ground_temperature = get_external_temperature();
-
-    // force EAS2TAS to recalculate
-    _EAS2TAS = 0;
 }
 
 // return altitude difference in meters between current pressure and a

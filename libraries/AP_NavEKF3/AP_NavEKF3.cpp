@@ -2013,6 +2013,12 @@ void NavEKF3::writeDefaultAirSpeed(float airspeed, float uncertainty)
     }
 }
 
+// return error score for currently active lane
+float NavEKF3::errorScore(void) const
+{
+    return core[primary].errorScore();
+}
+
 // returns true when the yaw angle has been aligned
 bool NavEKF3::yawAlignmentComplete(void) const
 {

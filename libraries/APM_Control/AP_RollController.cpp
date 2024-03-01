@@ -114,6 +114,15 @@ const AP_Param::GroupInfo AP_RollController::var_info[] = {
 
     AP_SUBGROUPINFO(rate_pid, "_RATE_", 9, AP_RollController, AC_PID),
 
+	// @Param: AMAX
+	// @DisplayName: Maximum Roll Acceleration
+	// @Description: Maximum roll acceleration that the roll controller demands (degrees/sec^2).
+	// @Range: 0 1800
+	// @Units: deg/s/s
+	// @Increment: 1
+	// @User: Advanced
+	AP_GROUPINFO("AMAX",   9, AP_RollController, gains.amax, 0),
+
     AP_GROUPEND
 };
 
@@ -242,7 +251,23 @@ float AP_RollController::get_servo_out(int32_t angle_err, float scaler, bool dis
         desired_rate = gains.rmax_pos;
     }
 
-    return _get_rate_out(desired_rate, scaler, disable_integrator, ground_mode);
+	if (gains.amax) {
+		uint32_t tnow = AP_HAL::millis();
+		uint32_t dt = tnow - _last_t_get_servo_out;
+		if (_last_t_get_servo_out == 0 || dt > 1000) {
+			dt = 0;
+			_last_rate_demand = _ahrs.get_gyro().x;
+		}
+		_last_t_get_servo_out = tnow;
+		const float max_increment = (float)gains.amax * (0.001f * (float)dt);
+		if (desired_rate - _last_rate_demand > max_increment) {
+			desired_rate = _last_rate_demand + max_increment;
+		} else if (desired_rate - _last_rate_demand < -max_increment) {
+			desired_rate = _last_rate_demand - max_increment;
+		}
+		_last_rate_demand = desired_rate;
+	}
+    return _get_rate_out(desired_rate, scaler, disable_integrator);
 }
 
 void AP_RollController::reset_I()

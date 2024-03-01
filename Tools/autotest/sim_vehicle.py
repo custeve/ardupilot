@@ -489,7 +489,8 @@ def find_location_by_name(locname):
     locations_userpath = os.environ.get('ARDUPILOT_LOCATIONS',
                                         get_user_locations_path())
     locations_filepath = os.path.join(autotest_dir, "locations.txt")
-    comment_regex = re.compile(r"\s*#.*")
+    comment_regex = re.compile("\s*#.*")
+    locname = locname.strip()
     for path in [locations_userpath, locations_filepath]:
         if not os.path.isfile(path):
             continue
@@ -503,11 +504,8 @@ def find_location_by_name(locname):
                 if name == locname:
                     return [(float)(x) for x in loc.split(",")]
 
-    # fallback to geocoder if available
-    loc = find_geocoder_location(locname)
-    if loc is None:
-        sys.exit(1)
-    return loc
+    print("Failed to find location (%s)" % locname)
+    sys.exit(1)
 
 
 def find_spawns(loc, offsets):
@@ -699,18 +697,14 @@ def start_vehicle(binary, opts, stuff, spawns=None):
         cmd.append("--set-storage-fram-enabled 1")
         cmd.append("--set-storage-posix-enabled 0")
     if opts.add_param_file:
-        for file in opts.add_param_file:
-            if not os.path.isfile(file):
-                print("The parameter file (%s) does not exist" %
-                      (file,))
-                sys.exit(1)
-
-            if path is not None:
-                path += "," + str(file)
-            else:
-                path = str(file)
-
-            progress("Adding parameters from (%s)" % (str(file),))
+        if not os.path.isfile(opts.add_param_file):
+            print("The parameter file (%s) does not exist" %
+                  (opts.add_param_file,))
+            sys.exit(1)
+        if path is None:
+            path = ""
+        path += "," + str(opts.add_param_file)
+        progress("Adding parameters from (%s)" % (str(opts.add_param_file),))
     if opts.OSDMSP:
         path += "," + os.path.join(root_dir, "libraries/AP_MSP/Tools/osdtest.parm")
         path += "," + os.path.join(autotest_dir, "default_params/msposd.parm")

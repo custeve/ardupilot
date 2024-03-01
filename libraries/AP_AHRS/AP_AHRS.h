@@ -74,8 +74,22 @@ public:
     // initialise
     void init(void);
 
-    /* Do not allow copies */
-    CLASS_NO_COPY(AP_AHRS);
+        // base the ki values by the sensors maximum drift
+        // rate.
+        _gyro_drift_limit = AP::ins().get_gyro_drift_rate();
+
+        // enable centrifugal correction by default
+        _flags.correct_centrifugal = true;
+
+        _last_trim = _trim.get();
+        _rotation_autopilot_body_to_vehicle_body.from_euler(_last_trim.x, _last_trim.y, 0.0f);
+        _rotation_vehicle_body_to_autopilot_body = _rotation_autopilot_body_to_vehicle_body.transposed();
+
+        _EAS2TAS = 1.0;
+    }
+
+    // empty virtual destructor
+    virtual ~AP_AHRS() {}
 
     // get singleton instance
     static AP_AHRS *get_singleton() {
@@ -838,9 +852,13 @@ private:
     // write POS (canonical vehicle position) message out:
     void Write_POS(void) const;
 
-#if HAL_NMEA_OUTPUT_ENABLED
-    class AP_NMEA_Output* _nmea_out;
-#endif
+    // EAS to TAS calculated on each loop
+    float _EAS2TAS;
+
+private:
+    static AP_AHRS *_singleton;
+
+    AP_NMEA_Output* _nmea_out;
 };
 
 namespace AP {

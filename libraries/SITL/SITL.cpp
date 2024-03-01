@@ -238,46 +238,13 @@ const AP_Param::GroupInfo SIM::var_info3[] = {
     AP_SUBGROUPINFO(baro[2], "BAR3_", 36, SIM, SIM::BaroParm),
 #endif
 
-    // user settable parameters for the 1st barometer
-    // @Param: BARO_RND
-    // @DisplayName: Baro Noise
-    // @Description: Amount of (evenly-distributed) noise injected into the 1st baro
-    // @Units: m
-    // @User: Advanced
+    // a method to force alt change for testing
+    AP_GROUPINFO("SET_ALT", 37, SITL, setalt, 0),
+    AP_GROUPINFO("SET_PITCH", 38, SITL, setpitch, 0),
+    AP_GROUPINFO("SET_SPEED", 39, SITL, setspeed, 0),
 
-    // @Param: BARO_GLITCH
-    // @DisplayName: Baro Glitch
-    // @Description: Glitch for 1st baro
-    // @Units: m
-    // @User: Advanced
-
-    // user settable parameters for the 2nd barometer
-    // @Param: BAR2_RND
-    // @DisplayName: Baro2 Noise
-    // @Description: Amount of (evenly-distributed) noise injected into the 2nd baro
-    // @Units: m
-    // @User: Advanced
-
-    // @Param: BAR2_GLITCH
-    // @DisplayName: Baro2 Glitch
-    // @Description: Glitch for 2nd baro
-    // @Units: m
-    // @User: Advanced
-
-    // user settable parameters for the 3rd barometer
-    // @Param: BAR3_RND
-    // @DisplayName: Baro3 Noise
-    // @Description: Amount of (evenly-distributed) noise injected into the 3rd baro
-    // @Units: m
-    // @User: Advanced
-
-    // @Param: BAR3_GLITCH
-    // @DisplayName: Baro3 Glitch
-    // @Description: Glitch for 2nd baro
-    // @Units: m
-    // @User: Advanced
-
-    AP_GROUPINFO("ESC_TELEM", 40, SIM, esc_telem, 1),
+    AP_GROUPINFO("BLN_BURST", 40, SITL, balloon_burst_amsl, 30000),
+    AP_GROUPINFO("BLN_RATE",  41, SITL, balloon_rate, 5.5),
 
     // user settable parameters for the 1st airspeed sensor
     AP_GROUPINFO("ARSPD_RND",     50, SIM,  arspd_noise[0], 2.0),
@@ -362,6 +329,14 @@ const AP_Param::GroupInfo SIM::var_gps[] = {
     AP_GROUPEND
 };
 #endif  // HAL_SIM_GPS_ENABLED
+
+// servo SITL parameters
+const AP_Param::GroupInfo SITL::var_servo[] = {
+    AP_GROUPINFO("SERVO_SPEED",   1, SITL,  servo_speed, 0.15),
+    AP_GROUPINFO("SERVO_DELAY",   2, SITL,  servo_delay, 0.01),
+    AP_GROUPINFO("SERVO_FILTER",  3, SITL,  servo_filter, 50),
+    AP_GROUPEND
+};
 
 // Mag SITL parameters
 const AP_Param::GroupInfo SIM::var_mag[] = {

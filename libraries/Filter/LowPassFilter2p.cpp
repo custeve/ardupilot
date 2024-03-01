@@ -115,6 +115,9 @@ void LowPassFilter2p<T>::reset(void) {
     return _filter.reset();
 }
 
+/*
+  alternative reset with value
+ */
 template <class T>
 void LowPassFilter2p<T>::reset(const T &value) {
     return _filter.reset(value, _params);

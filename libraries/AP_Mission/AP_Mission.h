@@ -214,6 +214,13 @@ public:
         float release_rate;     // release rate in meters/second
     };
 
+    // nav user commands
+    struct PACKED User_Command {
+        float param1;
+        float param2;
+        float param3;
+    };
+    
     // Scripting command structure
     struct PACKED scripting_Command {
         float p1;
@@ -296,6 +303,9 @@ public:
         // do-winch
         Winch_Command winch;
 
+        // user commands, for custom code
+        User_Command user_command;
+        
         // do scripting
         scripting_Command scripting;
 

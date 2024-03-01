@@ -77,6 +77,9 @@ bool Mode::enter()
     plane.auto_state.vtol_mode = is_vtol_mode();
     plane.auto_state.vtol_loiter = false;
 
+    // start with normal servo control
+    plane.auto_state.idle_mode = false;
+
     // initialize speed variable used in AUTO and GUIDED for DO_CHANGE_SPEED commands
     plane.new_airspeed_cm = -1;
 

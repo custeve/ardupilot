@@ -410,7 +410,10 @@ bool AP_Mission::is_nav_cmd(const Mission_Command& cmd)
     // NAV commands all have ids below MAV_CMD_NAV_LAST, plus some exceptions
     return (cmd.id <= MAV_CMD_NAV_LAST ||
             cmd.id == MAV_CMD_NAV_SET_YAW_SPEED ||
-            cmd.id == MAV_CMD_NAV_SCRIPT_TIME);
+            cmd.id == MAV_CMD_NAV_SCRIPT_TIME ||
+			cmd.id == MAV_CMD_USER_1);
+}
+
 }
 
 /// get_next_nav_cmd - gets next "navigation" command found at or after start_index
@@ -1175,7 +1178,6 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         cmd.p1 = packet.param1;                        // action 0=disable, 1=enable
         break;
 
-    case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
         cmd.p1 = packet.param1;
         cmd.content.scripting.p1 = packet.param2;
         cmd.content.scripting.p2 = packet.param3;
@@ -1183,9 +1185,6 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         break;
 
     case MAV_CMD_NAV_SCRIPT_TIME:
-        cmd.content.nav_script_time.command = packet.param1;
-        cmd.content.nav_script_time.timeout_s = packet.param2;
-        cmd.content.nav_script_time.arg1 = packet.param3;
         cmd.content.nav_script_time.arg2 = packet.param4;
         break;
 
@@ -1641,7 +1640,6 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         packet.param1 = cmd.p1; // Resume repeat distance (m)
         break;
 
-    case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
         packet.param1 = cmd.p1;
         packet.param2 = cmd.content.scripting.p1;
         packet.param3 = cmd.content.scripting.p2;
@@ -1649,9 +1647,6 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         break;
 
     case MAV_CMD_NAV_SCRIPT_TIME:
-        packet.param1 = cmd.content.nav_script_time.command;
-        packet.param2 = cmd.content.nav_script_time.timeout_s;
-        packet.param3 = cmd.content.nav_script_time.arg1;
         packet.param4 = cmd.content.nav_script_time.arg2;
         break;
 
@@ -2373,8 +2368,6 @@ const char *AP_Mission::Mission_Command::type() const
         return "Winch";
     case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
         return "Scripting";
-    case MAV_CMD_DO_JUMP:
-        return "Jump";
     case MAV_CMD_DO_GO_AROUND:
         return "Go Around";
     case MAV_CMD_NAV_SCRIPT_TIME:

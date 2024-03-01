@@ -355,6 +355,9 @@ public:
     // parameter conversion
     void convert_parameters();
 
+    // return error score for currently active lane
+    float errorScore(void) const;
+    
     // returns true when the yaw angle has been aligned
     bool yawAlignmentComplete(void) const;
 
