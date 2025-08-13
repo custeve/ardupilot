@@ -64,7 +64,8 @@ WIND = "0,180,0.2"  # speed,direction,variance
 
 
 #cmd = '../../Tools/autotest/sim_vehicle.py -D -f glider -G -L %s --aircraft test' % location
-cmd = '../Tools/autotest/sim_vehicle.py -D -v ArduPlane -f glider'
+#cmd = '../Tools/autotest/sim_vehicle.py -D -v ArduPlane -f glider'
+cmd = '../Tools/autotest/sim_vehicle.py -D -S 10 -N -v ArduPlane -f glider  --add-param-file=mav_glider_test.parm' # --custom-location=-35.38,149.16,20000.0,45.0'
 
 print('--------------------> Starting MAVPROXY: %s' % cmd)
 print()
@@ -73,7 +74,8 @@ print()
 mavproxy = pexpect.spawnu(cmd, logfile=sys.stdout, timeout=300)
 
 mavproxy.expect('ArduPilot Ready')
-print('--------------------> MAVPROXY Started.')
+mavproxy.expect("Saved")
+print('\n\n--------------------> MAVPROXY Started.')
 print()
 print()
 
@@ -81,20 +83,21 @@ print('--------------------> Connecing MAV...')
 
 mav = mavutil.mavlink_connection('127.0.0.1:14550')
 
-print('--------------------> Loading Mission.....')
+print('\n\n--------------------> Loading Mission.....')
 
 #mavproxy.send('speedup 1\n')
-mavproxy.send('wp load glider-pullup-mission.txt')
+mavproxy.send('wp load glider-pullup-mission.txt\n')
 mavproxy.expect('Loaded')
 
+print('\n\n--------------------> Mission Loaded.....')
 
-wait_mode(mav, ['MANUAL'])
+#wait_mode(mav, ['MANUAL'])
+
 mavproxy.send('param ftp\n')
 mavproxy.expect("Saved")
 
-print('--------------------> Mission Loading Completed. Parameters Downloaded.')
-print()
-print()
+print('\n\n--------------------> Parameters Downloaded.\n\n')
+
 
 # mavproxy.customise_SITL_commandline(
 #             [],
@@ -125,21 +128,34 @@ set distreadout 0
 
 
 mavproxy.send('set heartbeat 40\n')
-mavproxy.send('speedup 100\n')
+#mavproxy.send('speedup 100\n')
 mavproxy.send('arm throttle\n')
-mavproxy.expect('Throttle armed')
-mavproxy.send('auto\n')
-wait_mode(mav, ['AUTO'])
-mavproxy.send('rc 6 2000\n')
-if not args.no_ui:
-    mavproxy.send('module load map\n')
-    mavproxy.send('wp list\n')
-    mavproxy.send('gamslft\n')
-    mavproxy.send("kml load %s\n" % kmz)
+mavproxy.expect('armed')
 
-mavproxy.expect("Released",timeout=600)
+print('\n\n--------------------> Starting Mission.\n\n')
+mavproxy.send('\n')
+mavproxy.send('auto\n')
+#wait_mode(mav, ['AUTO'])
+mavproxy.expect("AUTO")
+mavproxy.send('rc 6 2000\n')
+# if not args.no_ui:
+#     mavproxy.send('module load map\n')
+#     mavproxy.send('wp list\n')
+#     mavproxy.send('gamslft\n')
+#     #mavproxy.send("kml load %s\n" % kmz)
+
+
+
+
+mavproxy.expect("ground",timeout=600)
+
+
+
 mavproxy.send('disarm force\n')
+
 kill_all()
+
+
 # os.system("ln -f logs/00000001.BIN test_runs/mission%u.bin" % args.mission)
 # os.system("ls -l test_runs/mission%u.bin" % args.mission)
 
