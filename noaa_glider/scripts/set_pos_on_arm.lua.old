@@ -1,0 +1,65 @@
+--[[
+    allow for force the position of the simulated vehicle when armed
+--]]
+
+-- to disable
+--return
+
+local was_armed = false
+
+
+local function update()
+
+    local armed = arming:is_armed()
+    local loc = ahrs:get_position()
+    --local armed = arming:is_armed() and loc:alt()>1000*100
+    local set_pos = armed and not was_armed
+
+
+
+    if set_pos then
+        local quat = Quaternion()
+        local vel = Vector3f()
+        local gyro = Vector3f()
+
+
+        quat:from_euler(0, math.rad(-90), 0)
+
+        
+        if not loc then
+            return
+        end
+
+        loc:alt(loc:alt()+ (24000 * 100))
+        --vel:y(10000)
+        --quat:earth_to_body(vel)
+
+        sim:set_pose(0,loc, quat, vel, gyro)
+
+        gcs:send_text(0, "LUA: Set New ARMING Pose")
+
+        vehicle:set_mode(10)
+
+        gcs:send_text(0, "LUA: Set Mode to AUTO")
+
+        -- SRV_Channels:set_output_pwm(6, 1900)
+
+        -- gcs:send_text(0, "LUA: Lift Balloon")
+
+
+
+    end
+
+    was_armed = armed
+end
+
+local function loop()
+    if was_armed then
+        return loop, 500
+    end
+    update()
+    return loop, 50
+end
+
+gcs:send_text(0, "LUA: Loaded arm pose")
+return loop,1000
