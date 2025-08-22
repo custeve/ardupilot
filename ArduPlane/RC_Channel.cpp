@@ -484,17 +484,6 @@ bool RC_Channel_Plane::do_aux_function(const AUX_FUNC ch_option, const AuxSwitch
         break;
 #endif
 
-#if AP_ICENGINE_ENABLED
-    case AUX_FUNC::ICE_START_STOP:
-        plane.g2.ice_control.do_aux_function(trigger);
-        break;
-#endif
-
-#if MODE_AUTOLAND_ENABLED
-    case AUX_FUNC::AUTOLAND:
-        do_aux_function_change_mode(Mode::Number::AUTOLAND, ch_flag);
-        break;
-#endif
 
 #if AP_PLANE_GLIDER_PULLUP_ENABLED
     case AUX_FUNC::BALLOON_RELEASE:

@@ -283,8 +283,7 @@ public:
         MOUNT2_YAW =         217, // mount4 yaw input
         LOWEHEISER_THROTTLE= 218,  // allows for throttle on slider
         TRANSMITTER_TUNING = 219, // use a transmitter knob or slider for in-flight tuning
-        TRANSMITTER_TUNING2 = 220, // use another transmitter knob or slider for in-flight tuning
-#endif  // AP_RC_TRANSMITTER_TUNING_ENABLED
+
         BALLOON_RELEASE =    221, // used for plane glider pullup code
 
         // inputs 248-249 are reserved for the Skybrush fork at

@@ -3,7 +3,7 @@ local was_changed = false
 local function update()
     local loc = ahrs:get_position()
 
-    if (arming:is_armed() and loc:alt() > 2500000) then
+    if (arming:is_armed() and loc:alt() > 2700000) then
         param:set('SIM_SPEEDUP',1)
         gcs:send_text(0, "LUA: Changed sim speed to 1")
         was_changed = true
