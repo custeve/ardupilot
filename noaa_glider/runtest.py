@@ -65,7 +65,7 @@ WIND = "0,180,0.2"  # speed,direction,variance
 
 #cmd = '../../Tools/autotest/sim_vehicle.py -D -f glider -G -L %s --aircraft test' % location
 #cmd = '../Tools/autotest/sim_vehicle.py -D -v ArduPlane -f glider'
-cmd = '../Tools/autotest/sim_vehicle.py -D -S 100 -N -v ArduPlane -f glider  --add-param-file=glider_test.parm' # --custom-location=-35.38,149.16,20000.0,45.0'
+cmd = '../Tools/autotest/sim_vehicle.py -D -S 100 -N -v ArduPlane -f glider' # --custom-location=-35.38,149.16,20000.0,45.0'
 
 print('--------------------> Starting MAVPROXY: %s' % cmd)
 print()
@@ -120,8 +120,8 @@ set distreadout 0
 ''')
 
 # mission_parm = "missions/mission%u.parm" % args.mission
-# if os.path.exists("all.parm"):
-#     mavproxy.send("param load all.parm\n")
+if os.path.exists("glider_test.parm"):
+    mavproxy.send("param load glider_test.parm\n")
 # if os.path.exists(mission_parm):
 #     mavproxy.send("param load %s\n" % mission_parm)
 # mavproxy.send("fence load %s\n" % fence)
