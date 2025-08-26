@@ -27,11 +27,11 @@ using namespace HALSITL;
 /*
   convert airspeed in m/s to an airspeed sensor value
  */
-void SITL_State::_update_airspeed(float true_airspeed)
+void SITL_State::_update_airspeed(float airspeed)
 {
     for (uint8_t i=0; i<AIRSPEED_MAX_SENSORS; i++) {
         const auto &arspd = _sitl->airspeed[i];
-        float airspeed = true_airspeed / AP_Baro::get_EAS2TAS_for_alt_amsl(_sitl->state.altitude);
+        //float airspeed = true_airspeed / AP_Baro::get_EAS2TAS_for_alt_amsl(_sitl->state.altitude);
         const float diff_pressure = sq(airspeed) / arspd.ratio;
         float airspeed_raw;
     
