@@ -65,7 +65,7 @@ WIND = "0,180,0.2"  # speed,direction,variance
 
 #cmd = '../../Tools/autotest/sim_vehicle.py -D -f glider -G -L %s --aircraft test' % location
 #cmd = '../Tools/autotest/sim_vehicle.py -D -v ArduPlane -f glider'
-cmd = '../Tools/autotest/sim_vehicle.py -D -S 100 -N -v ArduPlane -f glider' # --custom-location=-35.38,149.16,20000.0,45.0'
+cmd = '../Tools/autotest/sim_vehicle.py -D -S 100 -N -v ArduPlane -f glider --map' # --custom-location=-35.38,149.16,20000.0,45.0'
 
 print('--------------------> Starting MAVPROXY: %s' % cmd)
 print()
@@ -85,7 +85,7 @@ mav = mavutil.mavlink_connection('127.0.0.1:14550')
 
 print('\n\n--------------------> Loading Mission.....')
 
-#mavproxy.send('speedup 1\n')
+mavproxy.send('param set SIM_SPEEDUP 1\n')
 mavproxy.send('wp load glider-pullup-mission.txt\n')
 mavproxy.expect('Loaded')
 
@@ -114,21 +114,21 @@ print('\n\n--------------------> Parameters Downloaded.\n\n')
 
 
 mavproxy.send('''
-set altreadout 0
+set altreadout 1000
 set streamrate 1
 set distreadout 0
 ''')
 
 # mission_parm = "missions/mission%u.parm" % args.mission
-if os.path.exists("glider_test.parm"):
-    mavproxy.send("param load glider_test.parm\n")
+if os.path.exists("autotest.parm"):
+    mavproxy.send("param load autotest.parm\n")
 # if os.path.exists(mission_parm):
 #     mavproxy.send("param load %s\n" % mission_parm)
 # mavproxy.send("fence load %s\n" % fence)
 
 
 mavproxy.send('set heartbeat 40\n')
-#mavproxy.send('speedup 100\n')
+mavproxy.send('param set SIM_SPEEDUP 100\n')
 mavproxy.send('arm throttle\n')
 mavproxy.expect('armed')
 
@@ -137,7 +137,7 @@ mavproxy.send('\n')
 mavproxy.send('auto\n')
 #wait_mode(mav, ['AUTO'])
 mavproxy.expect("AUTO")
-mavproxy.send('rc 6 2000\n')
+mavproxy.send('servo set 6 2000\n')
 # if not args.no_ui:
 #     mavproxy.send('module load map\n')
 #     mavproxy.send('wp list\n')
@@ -147,11 +147,11 @@ mavproxy.send('rc 6 2000\n')
 
 
 
-mavproxy.expect("ground",timeout=600)
+mavproxy.expect("DISARMED",timeout=600)
 
 
 
-mavproxy.send('disarm force\n')
+#mavproxy.send('disarm force\n')
 
 kill_all()
 
