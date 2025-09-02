@@ -73,27 +73,28 @@ local function update()
         end
 
 
-        if math.abs(_vz_err) > 1.0 then 
+        if math.abs(_vz_err) > 0.5 then 
         --if _vz_err < 1.0 then
             local loc = ahrs:get_position()
             local alt = loc:alt() * 0.01
-            local _sign = 1
-            if _vz_err > 0 then  --vz is in m/s down
-                _sign = -1
-            end
-            if alt < 10000 then
-                -- placeholder, ideally this would be smarter 
-                _sign = _sign * -1
-            end
+            -- local _sign = 1
+            -- if _vz_err > 0 then  --vz is in m/s down
+            --     _sign = -1
+            -- end
+            -- if alt < 10000 then
+            --     -- placeholder, ideally this would be smarter 
+            --     _sign = _sign * -1
+            -- end
             -- gcs:send_text(0, "LUA: ALT: " .. tostring(alt) .. "S: " .. tostring(_sign))
             
-            _as = param:get('AIRSPEED_CRUISE')
-            _ts = _as + (_sign * GLD_DC_SPD_GAIN:get())
+            local _as = vehicle:get_target_airspeed() --param:get('AIRSPEED_CRUISE')
+            -- gcs:send_text(0, "LUA: SP_DEM: " .. tostring(_as))
+            local _ts = _as + (-_vz_err * GLD_DC_SPD_GAIN:get())
+            gcs:send_text(0, "LUA: VZ/E: " .. tostring(_vza) .. "/" .. tostring(_vz_err) .. ' SP_D:' .. tostring(_as))
             if _ts >= param:get('AIRSPEED_MIN') and _ts <= param:get('AIRSPEED_MAX') then 
-                gcs:send_text(0, "LUA: VZ/E: " .. tostring(_vza) .. "/" .. tostring(_vz_err) .. " ASP: " .. tostring(_ts))
-                param:set('AIRSPEED_CRUISE', _ts)
-            else
-                gcs:send_text(0, "LUA: VZ/E: " .. tostring(_vza) .. "/" .. tostring(_vz_err))
+                --gcs:send_text(0, "LUA: VZ/E: " .. tostring(_vza) .. "/" .. tostring(_vz_err) .. " ASP: " .. tostring(_ts))
+                --param:set('AIRSPEED_CRUISE', _ts)
+                vehicle:do_change_airspeed(_ts)
             end
 
         end
