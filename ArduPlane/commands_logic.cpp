@@ -988,6 +988,15 @@ bool Plane::do_change_speed(const AP_Mission::Mission_Command& cmd)
         );
 }
 
+bool Plane::do_change_airspeed(float speed_target_ms) {
+    return Plane::do_change_speed(0,speed_target_ms,aparm.throttle_cruise.get()); 
+}
+
+bool Plane::get_target_airspeed(float& req_airspeed) {
+    req_airspeed = new_airspeed_cm * 0.01f;
+    return true;
+}
+
 bool Plane::do_change_speed(uint8_t speedtype, float speed_target_ms, float throttle_pct)
 {
     switch (speedtype) {

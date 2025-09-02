@@ -1006,6 +1006,8 @@ private:
 #endif
     void do_wait_delay(const AP_Mission::Mission_Command& cmd);
     void do_within_distance(const AP_Mission::Mission_Command& cmd);
+    bool do_change_airspeed(float speed_target_ms) override;
+    bool get_target_airspeed(float& req_airspeed) override;
     bool do_change_speed(const AP_Mission::Mission_Command& cmd);
     void do_set_home(const AP_Mission::Mission_Command& cmd);
     bool start_command_callback(const AP_Mission::Mission_Command &cmd);
