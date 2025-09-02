@@ -48,9 +48,6 @@ local function update()
 
     local _vel = ahrs:get_velocity_NED()
 
-    -- if not LUA_msg and _vel:z() > (2 * GLD_DC_DES_VZ:get()) then
-    --     return
-    -- end
 
     if not LUA_msg then
         gcs:send_text(0, "LUA: DR control active target VZ = " .. tostring(GLD_DC_DES_VZ:get()))
@@ -66,12 +63,18 @@ local function update()
     if _avg_cnt > _avg_num then 
         _vza = _avg_sum / _avg_cnt
         _vz_sp = GLD_DC_DES_VZ:get()
-        _vz_err = _vz_sp - _vza
+        _vz_err = _vza - _vz_sp
         _avg_sum = 0.0
         _avg_cnt = 0.0
         --gcs:send_text(0, "LUA: avg VZ: " .. tostring(_vza) .. " Des: " .. tostring(_vz_sp) .. " Err" .. tostring(_vz_err) ) -- for debugging
 
+        if math.abs(_vza) > 20.0 then -- assume we don't have the control yet 
+            return
+        end
+
+
         if math.abs(_vz_err) > 1.0 then 
+        --if _vz_err < 1.0 then
             local loc = ahrs:get_position()
             local alt = loc:alt() * 0.01
             local _sign = 1
@@ -82,13 +85,15 @@ local function update()
                 -- placeholder, ideally this would be smarter 
                 _sign = _sign * -1
             end
-
-            --_as = ahrs:airspeed_estimate() -- would rather have a binding for the target airspeed
+            -- gcs:send_text(0, "LUA: ALT: " .. tostring(alt) .. "S: " .. tostring(_sign))
+            
             _as = param:get('AIRSPEED_CRUISE')
             _ts = _as + (_sign * GLD_DC_SPD_GAIN:get())
-            if _ts > param:get('AIRSPEED_MIN') and _ts < param:get('AIRSPEED_MAX') then 
-                gcs:send_text(0, "LUA: vz: " .. tostring(_vza) .. " vz_err: " .. tostring(_vz_err) .. " adj speed from: " .. tostring(_as) .. " to: " .. tostring(_ts))
+            if _ts >= param:get('AIRSPEED_MIN') and _ts <= param:get('AIRSPEED_MAX') then 
+                gcs:send_text(0, "LUA: VZ/E: " .. tostring(_vza) .. "/" .. tostring(_vz_err) .. " ASP: " .. tostring(_ts))
                 param:set('AIRSPEED_CRUISE', _ts)
+            else
+                gcs:send_text(0, "LUA: VZ/E: " .. tostring(_vza) .. "/" .. tostring(_vz_err))
             end
 
         end
